@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="hi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drone Progress Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef2f4;--cd:#fff;--tx:#14202b;--mu:#5d6b78;--bd:#d5dde3;--ac:#e8590c;--ok:#198754;--bl:#1c6dd0;--tr:#dfe6ea;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e151b;--cd:#17212a;--tx:#e6edf2;--mu:#93a3b0;--bd:#2a3743;--ac:#ff8a4c;--ok:#4cc38a;--bl:#6aa9f5;--tr:#27333d}}
+:root[data-theme="dark"]{--bg:#0e151b;--cd:#17212a;--tx:#e6edf2;--mu:#93a3b0;--bd:#2a3743;--ac:#ff8a4c;--ok:#4cc38a;--bl:#6aa9f5;--tr:#27333d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+.w{max-width:960px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:0;font-weight:600}h2{font-size:16px;margin:0 0 8px;font-weight:600}
+.top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.top h1{flex:1;min-width:180px}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:12px}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--cd);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;min-height:36px}
+input,select{max-width:100%}
+button{cursor:pointer}button.p{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:500}
+button.x{color:#c0392b;padding:2px 8px;min-height:28px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--bl);outline-offset:1px}
+.tabs{display:flex;gap:4px;overflow-x:auto;margin-bottom:12px;border-bottom:1px solid var(--bd)}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;white-space:nowrap;color:var(--mu)}
+.tabs button.on{color:var(--tx);border-bottom-color:var(--ac);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.st{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px}.st b{display:block;font-size:22px;font-weight:600}.st span{color:var(--mu);font-size:13px}
+.big{font-size:44px;font-weight:600;color:var(--ac);line-height:1}
+.bar{height:9px;background:var(--tr);border-radius:5px;overflow:hidden;margin:3px 0 8px}.bar i{display:block;height:100%;background:var(--bl)}.bar i.d{background:var(--ok)}
+.mu{color:var(--mu);font-size:13px}.li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid var(--bd);flex-wrap:wrap}
+.sc{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px;min-width:560px}td,th{text-align:left;padding:5px 6px;border-top:1px solid var(--bd);white-space:nowrap}
+canvas{width:100%;height:60vh;min-height:320px;max-height:560px;background:var(--tr);border-radius:8px;display:block;touch-action:none}
+.tl{display:flex;align-items:center;gap:8px;font-size:13px}.tl div{height:12px;background:var(--bl);border-radius:3px}
+.tag{display:inline-block;padding:1px 8px;border-radius:9px;font-size:12px;background:var(--tr)}.tag.ok{background:var(--ok);color:#fff}
+#gh{display:none}#msg{color:var(--ok);font-size:13px;min-height:20px}
+body{background:linear-gradient(var(--bg),var(--bg))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:8px 0}
+.card{box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.ring{width:130px;display:block;margin:6px 0}
+.pt{display:none;font-size:18px}
+.tabs button.on{background:var(--cd);border-radius:7px 7px 0 0}
+@media print{.top,.tabs,#gh,#msg,.card .row,#np{display:none!important}.pt{display:block}body{background:#fff;color:#000}.card{break-inside:avoid;box-shadow:none}canvas{height:380px;max-height:none}}
+</style></head><body><div class="w">
+<div class="top"><h1>Drone Progress Tracker</h1>
+<button onclick="gh.style.display=gh.style.display=='block'?'none':'block'">GitHub sync</button>
+<button onclick="tg()">Theme</button><button onclick="window.print()">Print / PDF</button><button onclick="exp()">Export JSON</button>
+<button onclick="imp.click()">Import JSON</button><input id="imp" type="file" accept=".json" hidden onchange="impf(this)"></div>
+<div id="gh" class="card"><h2>GitHub me data save karo</h2>
+<div class="row"><input id="g1" placeholder="owner/repo"><input id="g2" placeholder="branch (main)" size="10"><input id="g3" placeholder="data/drone-data.json"></div>
+<div class="row"><input id="g4" type="password" placeholder="Personal access token (Contents: read/write)"><button onclick="gsave()">Settings save</button><button class="p" onclick="gpush()">Push to GitHub</button><button onclick="gpull()">Pull from GitHub</button></div>
+<div class="mu">Token sirf is browser me rehta hai. GitHub sync tabhi chalega jab ye page aapke GitHub Pages ya local server se khule; is preview me network band hai, wahan Export/Import use karein.</div></div>
+<div id="msg"></div>
+<div class="card"><div class="row"><select id="ps" onchange="cur=this.value;tab='dash';R()"></select>
+<button onclick="np.style.display='flex'">+ Naya project</button><button class="x" onclick="dp()">Delete</button></div>
+<div class="row" id="np" style="display:none"><input id="pn" placeholder="Project ka naam"><input id="pl" placeholder="Site / location"><button class="p" onclick="ap()">Add project</button></div></div>
+<div class="tabs" id="tb"></div><div id="m"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+<script>
+const $=s=>document.querySelector(s),K='dronetrk',KG='dronetrk_gh',PAL=['#1c6dd0','#e8590c','#198754','#8e44ad','#d4a017','#c2185b','#00838f'];
+const E=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9),pc=n=>Math.round(n)+'%';
+let S={projects:[]},cur=null,tab='dash',msg='';
+try{S=JSON.parse(localStorage.getItem(K))||S}catch(e){}
+cur=S.projects[0]&&S.projects[0].id;
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){msg='Browser storage full hai: Export JSON ya GitHub push karo'}};
+const P=()=>S.projects.find(p=>p.id===cur);
+const say=t=>{$('#msg').textContent=t};
+function hav(a,b,c,d){const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742000*Math.asin(Math.sqrt(x))}
+function stats(p){
+ const ph=p.photos,gp=ph.filter(x=>x.lat!=null);
+ const w=p.works.length?p.works.reduce((s,x)=>s+(x.target>0?Math.min(100,x.done/x.target*100):0),0)/p.works.length:null;
+ const ms=p.missions.map(m=>{const n=ph.filter(x=>x.mission===m.id).length;return{m,n,p:m.planned>0?Math.min(100,n/m.planned*100):(n?100:0)}});
+ const mp=ms.length?ms.reduce((s,x)=>s+x.p,0)/ms.length:null;
+ const v=[w,mp].filter(x=>x!=null),R=+p.radius||50,cv=cover(p,1);
+ return{ph,gp,w,ms,mp,R,cv,all:cv.pol.length?cv.pct:v.length?v.reduce((a,b)=>a+b)/v.length:0,gc:p.gcps.map(g=>({g,cov:gp.some(x=>hav(g.lat,g.lon,x.lat,x.lon)<=R)}))}}
+const bar=v=>`<div class="bar"><i class="${v>=100?'d':''}" style="width:${Math.min(100,v)}%"></i></div>`;
+function R(){
+ $('#ps').innerHTML=S.projects.map(p=>`<option value="${p.id}" ${p.id===cur?'selected':''}>${E(p.name)}</option>`).join('')||'<option>Koi project nahi</option>';
+ $('#tb').innerHTML=[['dash','Dashboard'],['ph','Photos'],['mi','Missions'],['wk','Kaam'],['gc','GCP'],['kl','KML']].map(t=>`<button class="${tab==t[0]?'on':''}" onclick="tab='${t[0]}';R()">${t[1]}</button>`).join('');
+ const p=P();
+ if(!p){$('#m').innerHTML='<div class="card">Upar "+ Naya project" se pehla project banao, phir drone photos upload karke progress dekho.</div>';return}
+ const SS=stats(p);$('#m').innerHTML={dash,ph:phs,mi:mis,wk:wks,gc:gcs,kl:kmls}[tab](p,SS);
+ if(tab=='dash'||tab=='gc')map(p,SS);
+ say(msg);msg='';
+}
+function dash(p,s){
+ const tr=s.cv.pol.length?trend(p):[],days={};s.ph.forEach(x=>{if(x.time){const d=ld(x.time);days[d]=(days[d]||0)+1}});
+ const dk=Object.keys(days).sort(),mx=Math.max(1,...Object.values(days));
+ const al=s.ph.map(x=>x.rel!=null?x.rel:x.alt).filter(x=>x!=null),av=al.length?al.reduce((a,b)=>a+b)/al.length:null;
+ const gv=p.gcps.filter(g=>g.status=='verified').length,gcl=p.gcps.filter(g=>g.status=='collected'||g.status=='verified').length,gcv=s.gc.filter(x=>x.cov).length;
+ return `<h1 class="pt">${E(p.name)} - progress report, ${new Date().toLocaleDateString()}</h1><div class="card"><div class="mu">${E(p.site||'')}</div><svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--tr)" stroke-width="3.5"/><circle cx="18" cy="18" r="15.9" fill="none" stroke="var(--ac)" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="${Math.min(100,s.all)} 100" transform="rotate(-90 18 18)"/><text x="18" y="21.5" text-anchor="middle" font-size="9" font-weight="600" fill="currentColor">${pc(s.all)}</text></svg><div class="mu">${s.cv.pol.length?'Kaam complete: '+(s.cv.cov/1e4).toFixed(2)+' ha / '+(s.cv.area/1e4).toFixed(2)+' ha (photo area coverage se)':'Overall progress (kaam aur missions ka average)'}</div></div>
+ <div class="g"><div class="st"><b>${s.ph.length}</b><span>Photos (${s.gp.length} me GPS)</span></div><div class="st"><b>${p.missions.length}</b><span>Missions</span></div><div class="st"><b>${gcl}/${p.gcps.length}</b><span>GCP coords collect (${gv} verified)</span></div><div class="st"><b>${gcv}/${p.gcps.length}</b><span>GCP photos se covered</span></div><div class="st"><b>${av==null?'-':av.toFixed(0)+' m'}</b><span>Avg flight height</span></div><div class="st"><b>${dk.length}</b><span>Flight days${dk.length?' ('+dk[0]+' se '+dk[dk.length-1]+')':''}</span></div></div>
+ ${[[s.ph.length-s.gp.length,'photos me GPS nahi hai'],[s.ph.filter(x=>!x.mission).length,'photos kisi mission se nahi jude'],[s.gc.filter(x=>!x.cov).length,'GCP photos se covered nahi']].filter(a=>a[0]>0).length?`<div class="card"><h2>Dhyan do</h2><ul style="margin:0;padding-left:18px">${[[s.ph.length-s.gp.length,'photos me GPS nahi hai'],[s.ph.filter(x=>!x.mission).length,'photos kisi mission se nahi jude'],[s.gc.filter(x=>!x.cov).length,'GCP photos se covered nahi']].filter(a=>a[0]>0).map(a=>`<li>${a[0]} ${a[1]}</li>`).join('')}</ul></div>`:''}
+ ${tr.length>1?`<div class="card"><h2>Coverage trend</h2><svg viewBox="0 0 300 90" style="width:100%;max-height:160px"><line x1="10" y1="10" x2="290" y2="10" stroke="var(--bd)"/><polyline fill="none" stroke="var(--ac)" stroke-width="2.5" points="${tr.map((t,i)=>(10+i*280/(tr.length-1)).toFixed(1)+','+(80-t.pct*.7).toFixed(1)).join(' ')}"/></svg><div class="mu">${tr[0].d}: ${pc(tr[0].pct)} se ${tr[tr.length-1].d}: ${pc(tr[tr.length-1].pct)} tak (${tr.length} flight days)</div></div>`:''}
+ <div class="card"><h2>Area coverage (KML polygon ke hisaab se)</h2>${s.cv.pol.map(x=>`<div>${E(x.name||'Polygon')} <span class="mu">${(x.area/1e4).toFixed(2)} ha, ${pc(x.pct)} cover</span>${bar(x.pct)}</div>`).join('')||'<div class="mu">KML tab me kaam ka polygon upload karo; photos us area ko kitna cover karte hain ye yahan dikhega.</div>'}<div class="row"><span class="mu">Default height (m):</span><input type="number" value="${p.fh||60}" style="width:80px" onchange="P().fh=+this.value;save();R()"><span class="mu">Footprint factor:</span><input type="number" step="0.1" value="${p.fk||1.2}" style="width:80px" onchange="P().fk=+this.value;save();R()"></div><div class="mu">Har photo ka ground footprint (square) = height x factor. Height photo ke relative altitude se aati hai, na ho to default.</div></div>
+ <div class="card"><h2>Kaam ka progress</h2>${p.works.map(w=>`<div>${E(w.name)} <span class="mu">${w.done}/${w.target} ${E(w.unit)}</span>${bar(w.target>0?w.done/w.target*100:0)}</div>`).join('')||'<div class="mu">Kaam tab me kaam add karo.</div>'}</div>
+ <div class="card"><h2>Missions</h2>${s.ms.map(x=>`<div>${E(x.m.name)} <span class="mu">${x.n}/${x.m.planned||'?'} photos</span>${bar(x.p)}</div>`).join('')||'<div class="mu">Missions tab me mission add karo.</div>'}</div>
+ ${mapCard()}
+ <div class="card"><h2>Din ke hisaab se photos</h2>${dk.map(d=>`<div class="tl"><span style="width:84px">${d}</span><div style="width:${days[d]/mx*70}%"></div>${days[d]}</div>`).join('')||'<div class="mu">Photos upload karo.</div>'}</div>`}
+function phs(p,s){
+ return `<div class="card"><h2>Drone photos upload</h2><div class="row"><select id="ms"><option value="">Mission: koi nahi</option>${p.missions.map(m=>`<option value="${m.id}">${E(m.name)}</option>`).join('')}</select><input type="file" id="fi" accept="image/*" multiple onchange="up(this)"></div>
+ <div class="mu">Photo ka EXIF (time, GPS, altitude, camera, size) padha jata hai. Photo khud save nahi hoti, sirf metadata.</div></div>
+ <div class="card sc"><h2>Metadata (${s.ph.length})</h2><div class="row"><input placeholder="File naam search" value="${E(FQ)}" onchange="FQ=this.value.toLowerCase();R()"><select onchange="FM=this.value;R()"><option value="">Saare missions</option><option value="-" ${FM=='-'?'selected':''}>Mission nahi</option>${p.missions.map(m=>`<option value="${m.id}" ${FM==m.id?'selected':''}>${E(m.name)}</option>`).join('')}</select><button onclick="csvx()">CSV export</button></div><table><tr><th>File</th><th>Time</th><th>Lat</th><th>Lon</th><th>Alt</th><th>Camera</th><th>Mission</th><th></th></tr>
+ ${s.ph.filter(x=>(!FQ||x.file.toLowerCase().includes(FQ))&&(!FM||(FM=='-'?!x.mission:x.mission===FM))).slice(-150).reverse().map(x=>`<tr><td>${E(x.file)}</td><td>${x.time?x.time.slice(0,16).replace('T',' '):'-'}</td><td>${x.lat==null?'-':x.lat.toFixed(6)}</td><td>${x.lon==null?'-':x.lon.toFixed(6)}</td><td>${x.rel!=null?x.rel.toFixed(0)+' (rel)':x.alt!=null?x.alt.toFixed(0):'-'}</td><td>${E(x.cam)}</td><td><select onchange="sm('${x.id}',this.value)"><option value="">-</option>${p.missions.map(m=>`<option value="${m.id}" ${m.id===x.mission?'selected':''}>${E(m.name)}</option>`).join('')}</select></td><td><button class="x" onclick="dph('${x.id}')">x</button></td></tr>`).join('')}</table></div>`}
+async function up(i){const p=P(),mid=$('#ms').value||null;let n=0;say('Metadata padh raha hu...');
+ for(const f of i.files){try{const t=await exifr.parse(f,{tiff:true,exif:true,gps:true,xmp:true})||{},d=t.DateTimeOriginal||t.CreateDate;
+  const o={id:uid(),mission:mid,th:t.latitude==null?null:await thumb(f),file:f.name,size:f.size,time:d?new Date(d).toISOString():null,lat:t.latitude==null?null:t.latitude,lon:t.longitude==null?null:t.longitude,alt:t.GPSAltitude==null?null:+t.GPSAltitude,rel:t.RelativeAltitude==null?null:+t.RelativeAltitude,cam:[t.Make,t.Model].filter(Boolean).join(' '),w:t.ExifImageWidth||t.ImageWidth||null,h:t.ExifImageHeight||t.ImageHeight||null};
+  if(!p.photos.some(x=>x.file===o.file&&x.time===o.time)){p.photos.push(o);n++}}catch(e){}}
+ const a=aa(p);save();msg=n+' photos add hue'+(a?', '+a+' mission se jude':'');R()}
+const sm=(id,v)=>{P().photos.find(x=>x.id===id).mission=v||null;save();msg='Mission update hua';R()};
+const dph=id=>{const p=P();p.photos=p.photos.filter(x=>x.id!==id);save();R()};
+function mis(p,s){return `<div class="card"><h2>Mission add karo</h2><div class="row"><input id="a1" placeholder="Mission ka naam"><input id="a2" type="date"><input id="a3" type="number" placeholder="Planned photos" style="width:130px"></div><div class="row"><input id="a4" placeholder="Notes" style="flex:1"><button class="p" onclick="am()">Add mission</button></div></div>
+ <div class="card"><h2>Missions</h2><div class="row"><button onclick="aab()">Photos ko date se mission me auto-assign karo</button></div>${s.ms.map((x,i)=>`<div class="li"><div><span style="color:${PAL[i%PAL.length]}">●</span> <b>${E(x.m.name)}</b> <span class="mu">${E(x.m.date||'')} ${E(x.m.notes||'')}</span><br><span class="mu">${x.n}/${x.m.planned||'?'} photos (${pc(x.p)})</span></div><button class="x" onclick="del('missions','${x.m.id}')">Delete</button></div>`).join('')||'<div class="mu">Abhi koi mission nahi.</div>'}</div>`}
+function wks(p){return `<div class="card"><h2>Kaam add karo</h2><div class="row"><input id="a1" placeholder="Kaam (jaise Survey, Road mapping)"><input id="a2" placeholder="Unit (km, ha, plot)" style="width:120px"><input id="a3" type="number" placeholder="Target" style="width:100px"><button class="p" onclick="aw()">Add kaam</button></div></div>
+ <div class="card"><h2>Kaam</h2>${p.works.map(w=>`<div class="li"><div style="flex:1;min-width:200px"><b>${E(w.name)}</b> <span class="mu">target ${w.target} ${E(w.unit)}</span>${bar(w.target>0?w.done/w.target*100:0)}</div><div class="row"><input type="number" value="${w.done}" style="width:90px" onchange="wd('${w.id}',this.value)"><span class="mu">${E(w.unit)} ho gaya</span><button class="x" onclick="del('works','${w.id}')">Delete</button></div></div>`).join('')||'<div class="mu">Abhi koi kaam nahi.</div>'}</div>`}
+function gcs(p,s){return `<div class="card"><h2>GCP KML upload</h2><div class="row"><input type="file" accept=".kml" multiple onchange="gkml(this)"></div><div class="mu">KML ke saare points GCP ban jate hain (status planned). File GitHub ke kml/ folder me bhi save hoti hai (agar sync set hai).</div></div>
+ ${mapCard()}
+ <div class="card"><h2>GCP add karo</h2><div class="row"><input id="a1" placeholder="GCP naam" style="width:110px"><input id="a2" type="number" step="any" placeholder="Lat" style="width:120px"><input id="a3" type="number" step="any" placeholder="Lon" style="width:120px"><input id="a4" type="number" step="any" placeholder="Elev (m)" style="width:100px"><select id="a5"><option>planned</option><option>marked</option><option>collected</option><option>verified</option></select><button class="p" onclick="ag()">Add GCP</button></div>
+ <div class="row"><textarea id="cs" rows="2" placeholder="CSV paste: naam,lat,lon,elev" style="flex:1"></textarea><button onclick="csv()">CSV import</button></div>
+ <div class="row"><span class="mu">Photo coverage radius (m):</span><input type="number" value="${s.R}" style="width:80px" onchange="P().radius=+this.value;save();R()"></div></div>
+ <div class="card sc"><h2>GCP (${p.gcps.length})</h2><table><tr><th>Naam</th><th>Lat</th><th>Lon</th><th>Elev</th><th>Status</th><th>Photos me</th><th></th></tr>${s.gc.map(({g,cov})=>`<tr><td>${E(g.name)}</td><td>${g.lat}</td><td>${g.lon}</td><td>${g.elev==null?'-':g.elev}</td><td><select onchange="gst('${g.id}',this.value)">${['planned','marked','collected','verified'].map(o=>`<option ${o==g.status?'selected':''}>${o}</option>`).join('')}</select></td><td><span class="tag ${cov?'ok':''}">${cov?'covered':'nahi'}</span></td><td><button class="x" onclick="del('gcps','${g.id}')">x</button></td></tr>`).join('')}</table></div>`}
+const v=id=>$('#'+id).value.trim();
+function ap(){if(!v('pn'))return;const p={id:uid(),name:v('pn'),site:v('pl'),radius:50,works:[],missions:[],gcps:[],photos:[]};S.projects.push(p);cur=p.id;save();np.style.display='none';R()}
+function dp(){if(!P()||!confirm('Ye project aur uska data delete karein?'))return;S.projects=S.projects.filter(p=>p.id!==cur);cur=S.projects[0]&&S.projects[0].id;save();R()}
+function am(){if(!v('a1'))return;P().missions.push({id:uid(),name:v('a1'),date:v('a2'),planned:+v('a3')||0,notes:v('a4')});save();R()}
+function aw(){if(!v('a1'))return;P().works.push({id:uid(),name:v('a1'),unit:v('a2'),target:+v('a3')||0,done:0});save();R()}
+const wd=(id,x)=>{P().works.find(w=>w.id===id).done=+x||0;save();R()};
+function ag(){if(!v('a1')||v('a2')===''||v('a3')==='')return;P().gcps.push({id:uid(),name:v('a1'),lat:+v('a2'),lon:+v('a3'),elev:v('a4')===''?null:+v('a4'),status:v('a5')});save();R()}
+function csv(){let n=0;v('cs').split('\n').forEach(l=>{const a=l.split(/[,\t]/).map(x=>x.trim());if(a.length>=3&&!isNaN(+a[1])&&!isNaN(+a[2])){P().gcps.push({id:uid(),name:a[0],lat:+a[1],lon:+a[2],elev:a[3]?+a[3]:null,status:'planned'});n++}});save();msg=n+' GCP import hue';R()}
+const gst=(id,s)=>{P().gcps.find(g=>g.id===id).status=s;save();R()};
+function del(k,id){const p=P();p[k]=p[k].filter(x=>x.id!==id);if(k=='missions')p.photos.forEach(x=>{if(x.mission===id)x.mission=null});save();R()}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='drone-data.json';a.click()}
+function impf(i){const f=i.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!Array.isArray(d.projects))throw 0;S=d;cur=S.projects[0]&&S.projects[0].id;save();msg='Data import ho gaya';R()}catch(e){say('JSON file sahi nahi hai')}})}
+/* EXTRAS */
+let FQ='',FM='',GV=[];
+const SC={planned:'#e03131',marked:'#f08c00',collected:'#1c6dd0',verified:'#198754'},GL={planned:'Planned',marked:'Marked',collected:'Coordinates collect ho gaye',verified:'Verified'};
+const gpanel=g=>`<b>${E(g.name)}</b> | ${g.lat.toFixed(7)}, ${g.lon.toFixed(7)}${g.elev==null?'':' | '+g.elev+' m'}<div class="row" style="margin:6px 0 0">${Object.keys(GL).map(o=>`<button class="${g.status==o?'p':''}" onclick="gsm('${g.id}','${o}')">${GL[o]}</button>`).join('')}</div>`;
+function gsm(id,st){const g=P().gcps.find(x=>x.id==id);g.status=st;save();msg=g.name+': '+GL[st];R();$('#mi').innerHTML=gpanel(g)}
+async function gkml(i){const p=P();let n=0,fl=0,ok=0;say('KML padh raha hu...');
+ for(const f of i.files){const t=await f.text(),pts=kparse(t).filter(q=>q.t=='pt');fl++;
+  pts.forEach(q=>{const a=q.c[0];if(!p.gcps.some(g=>g.name==q.name&&Math.abs(g.lat-a[0])<1e-7&&Math.abs(g.lon-a[1])<1e-7)){p.gcps.push({id:uid(),name:q.name||'GCP',lat:a[0],lon:a[1],elev:a[2]||null,status:'planned'});n++}});
+  if(pts.length&&G.repo&&G.token){try{await kpush(f.name,t,p);ok++}catch(e){}}}
+ save();msg=n+' GCP import hue ('+fl+' file)'+(ok?', '+ok+' file GitHub me save':'');V.pid=null;R()}
+const mapCard=()=>`<div class="card"><h2>Map</h2><div class="row"><select onchange="L.base=this.value;draw()">${[['sat','Satellite'],['osm','Street'],['none','Basemap nahi']].map(o=>`<option value="${o[0]}" ${L.base==o[0]?'selected':''}>${o[1]}</option>`).join('')}</select>${[['kml','KML'],['ph','Photos'],['cv','Coverage'],['gap','Baaki area'],['gc','GCP']].map(o=>`<label><input type="checkbox" ${L[o[0]]?'checked':''} onchange="L['${o[0]}']=this.checked?1:0;draw()"> ${o[1]}</label>`).join(' ')}<button onclick="fit()">Fit</button><button onclick="zm(.5)">+</button><button onclick="zm(-.5)">&minus;</button></div><canvas id="cv"></canvas><div id="mi" class="mu">GCP ya photo par tap karo: details aur status yahan dikhenge. Basemap ke liye internet chahiye.</div></div>`;
+function mk(g,m){const c=document.createElement('canvas');c.width=g.nx;c.height=g.ny;const t=c.getContext('2d'),d=t.createImageData(g.nx,g.ny);for(let j=0;j<g.ny;j++)for(let i=0;i<g.nx;i++)if(m[j*g.nx+i]==1)d.data.set([239,68,68,120],((g.ny-1-j)*g.nx+i)*4);t.putImageData(d,0,0);return c}
+function trend(p){const ds=[...new Set(p.photos.filter(x=>x.time&&x.lat!=null).map(x=>ld(x.time)))].sort();return ds.map(d=>({d,pct:cover({...p,photos:p.photos.filter(x=>x.time&&ld(x.time)<=d)}).pct}))}
+function tg(){const r=document.documentElement,d=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark';try{localStorage.setItem('dronetrk_th',r.dataset.theme)}catch(e){}draw()}
+try{const t=localStorage.getItem('dronetrk_th');if(t)document.documentElement.dataset.theme=t}catch(e){}
+function csvx(){const p=P(),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"',r=p.photos.map(x=>[x.file,x.time,x.lat,x.lon,x.alt,x.rel,x.cam,(p.missions.find(m=>m.id===x.mission)||{}).name].map(q).join(',')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['file,time,lat,lon,alt,rel_alt,camera,mission\n'+r],{type:'text/csv'}));a.download=p.name+'-photos.csv';a.click()}
+/* MAP + COVERAGE */
+const fs=(a,p)=>Math.min(500,Math.max(5,(a.rel>0?a.rel:(p.fh||60))*(p.fk||1.2)));
+const ld=t=>{const d=new Date(t),z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())};
+function aa(p){let n=0;p.photos.forEach(a=>{if(a.mission||!a.time)return;const m=p.missions.find(m=>m.date&&m.date==ld(a.time));if(m){a.mission=m.id;n++}});return n}
+const aab=()=>{const n=aa(P());save();msg=n+' photos mission me assign hue';R()};
+async function thumb(f){try{const b=await createImageBitmap(f,{resizeWidth:112,resizeQuality:'low'}),c=document.createElement('canvas');c.width=c.height=56;const m=Math.min(b.width,b.height);c.getContext('2d').drawImage(b,(b.width-m)/2,(b.height-m)/2,m,m,0,0,56,56);if(b.close)b.close();return c.toDataURL('image/jpeg',.55)}catch(e){return null}}
+const GR=new WeakMap();
+function cover(p,gap){const r={pol:[],area:0,cov:0,pct:0};
+ (p.kmls||[]).forEach(k=>k.feats.filter(f=>f.t=='pg').forEach(f=>{
+  let g=GR.get(f);
+  if(!g){const la0=f.c[0][0],lo0=f.c[0][1],kx=111320*Math.cos(la0*Math.PI/180),ky=110540,q=f.c.map(a=>[(a[1]-lo0)*kx,(a[0]-la0)*ky]);
+   let x0=1e18,y0=1e18,x1=-1e18,y1=-1e18,ar=0;
+   q.forEach((a,i)=>{x0=Math.min(x0,a[0]);y0=Math.min(y0,a[1]);x1=Math.max(x1,a[0]);y1=Math.max(y1,a[1]);const b=q[(i+1)%q.length];ar+=a[0]*b[1]-b[0]*a[1]});
+   ar=Math.abs(ar)/2;
+   const cs=Math.max(Math.max(x1-x0,y1-y0)/150,.5),nx=Math.max(1,Math.ceil((x1-x0)/cs)),ny=Math.max(1,Math.ceil((y1-y0)/cs)),m=new Uint8Array(nx*ny);let tot=0;
+   if(ar>=1)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){const px=x0+(i+.5)*cs,py=y0+(j+.5)*cs;let ins=false;for(let a=0,b=q.length-1;a<q.length;b=a++){if((q[a][1]>py)!=(q[b][1]>py)&&px<(q[b][0]-q[a][0])*(py-q[a][1])/(q[b][1]-q[a][1])+q[a][0])ins=!ins}if(ins){m[j*nx+i]=1;tot++}}
+   g={la0,lo0,kx,ky,x0,y0,cs,nx,ny,m,tot,ar};GR.set(f,g)}
+  if(g.ar<1)return;
+  const m=g.m.slice();let cn=0;
+  p.photos.forEach(a=>{if(a.lat==null)return;const px=(a.lon-g.lo0)*g.kx,py=(a.lat-g.la0)*g.ky,h=fs(a,p)/2;
+   for(let j=Math.max(0,Math.floor((py-h-g.y0)/g.cs));j<=Math.min(g.ny-1,Math.floor((py+h-g.y0)/g.cs));j++)for(let i=Math.max(0,Math.floor((px-h-g.x0)/g.cs));i<=Math.min(g.nx-1,Math.floor((px+h-g.x0)/g.cs));i++)if(m[j*g.nx+i]==1){m[j*g.nx+i]=2;cn++}});
+  const pct=g.tot?cn/g.tot*100:0;r.pol.push({name:f.name,area:g.ar,pct,g,img:gap?mk(g,m):null});r.area+=g.ar;r.cov+=g.ar*pct/100}));
+ r.pct=r.area?r.cov/r.area*100:0;return r}
+let V={z:2,cx:0,cy:0,pid:null},L={base:'sat',kml:1,ph:1,cv:1,gap:1,gc:1},TC={},THI={},CP,CS,PV=[],PT={},pd=0,mv=0,raf=0;
+const W=(lo,z)=>(lo+180)/360*256*2**z,Hh=(la,z)=>(1-Math.log(Math.tan(la*Math.PI/180)+1/Math.cos(la*Math.PI/180))/Math.PI)/2*256*2**z;
+function map(p,s){CP=p;CS=s;const c=$('#cv');if(!c)return;bind(c);if(V.pid!==p.id){V.pid=p.id;fit()}else draw()}
+function fit(){const p=CP,c=$('#cv');if(!c)return;let a0=90,a1=-90,o0=180,o1=-180,n=0;
+ const t=(la,lo)=>{n++;a0=Math.min(a0,la);a1=Math.max(a1,la);o0=Math.min(o0,lo);o1=Math.max(o1,lo)};
+ (p.kmls||[]).forEach(k=>k.feats.forEach(f=>f.c.forEach(q=>t(q[0],q[1]))));p.gcps.forEach(g=>t(g.lat,g.lon));CS.gp.forEach(a=>t(a.lat,a.lon));
+ if(!n){V.z=4;V.cx=W(78,4);V.cy=Hh(22,4);return draw()}
+ const dx=W(o1,0)-W(o0,0),dy=Hh(a0,0)-Hh(a1,0);
+ V.z=Math.min(18,Math.max(1,Math.min(Math.log2((c.clientWidth-60)/Math.max(dx,1e-9)),Math.log2((c.clientHeight-60)/Math.max(dy,1e-9)))));
+ V.cx=W((o0+o1)/2,V.z);V.cy=(Hh(a0,V.z)+Hh(a1,V.z))/2;draw()}
+function zoomAt(px,py,dz){const c=$('#cv'),w=c.clientWidth,h=c.clientHeight,nz=Math.min(20,Math.max(1,V.z+dz)),f=2**(nz-V.z);V.cx=(V.cx-w/2+px)*f-px+w/2;V.cy=(V.cy-h/2+py)*f-py+h/2;V.z=nz;draw()}
+const zm=dz=>{const c=$('#cv');zoomAt(c.clientWidth/2,c.clientHeight/2,dz)};
+const pdist=()=>{const k=Object.values(PT);return k.length==2?Math.hypot(k[0][0]-k[1][0],k[0][1]-k[1][1]):0};
+function bind(c){
+ c.onpointerdown=e=>{if(!Object.keys(PT).length)mv=0;c.setPointerCapture(e.pointerId);PT[e.pointerId]=[e.offsetX,e.offsetY];pd=pdist()};
+ c.onpointermove=e=>{const o=PT[e.pointerId];if(!o)return;const dx=e.offsetX-o[0],dy=e.offsetY-o[1];PT[e.pointerId]=[e.offsetX,e.offsetY];mv+=Math.abs(dx)+Math.abs(dy);const k=Object.values(PT);
+  if(k.length==1){V.cx-=dx;V.cy-=dy;draw()}else if(k.length==2){const d=pdist();if(pd)zoomAt((k[0][0]+k[1][0])/2,(k[0][1]+k[1][1])/2,Math.log2(d/pd));pd=d}};
+ c.onpointerup=e=>{delete PT[e.pointerId];pd=0;if(mv<6&&!Object.keys(PT).length)pick(e.offsetX,e.offsetY)};
+ c.onpointercancel=e=>{delete PT[e.pointerId];pd=0};
+ c.onwheel=e=>{e.preventDefault();zoomAt(e.offsetX,e.offsetY,e.deltaY<0?.5:-.5)}}
+function pick(mx,my){let b=null,bd=20,gg=null,gd=22;GV.forEach(q=>{const d=Math.hypot(q.x-mx,q.y-my);if(d<gd){gd=d;gg=q.g}});PV.forEach(q=>{const d=Math.hypot(q.x-mx,q.y-my);if(d<bd){bd=d;b=q.a}});const el=$('#mi');if(!el)return;
+ if(gg){el.innerHTML=gpanel(gg);return}const ms=b&&CP.missions.find(k=>k.id===b.mission);
+ el.innerHTML=b?`<b>${E(b.file)}</b> ${b.time?b.time.slice(0,16).replace('T',' '):''} | ${b.lat.toFixed(6)}, ${b.lon.toFixed(6)} | ${b.rel!=null?b.rel.toFixed(0)+' m rel':b.alt!=null?b.alt.toFixed(0)+' m':''} | ${ms?E(ms.name):'mission nahi'}`:'GCP ya photo par tap karo: details aur status yahan dikhenge.'}
+function draw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(dr)}
+addEventListener('resize',draw);
+function dr(){const c=$('#cv');if(!c||!CP)return;const p=CP,s=CS,d=devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight,z=V.z;
+ if(c.width!=Math.round(cw*d)||c.height!=Math.round(ch*d)){c.width=Math.round(cw*d);c.height=Math.round(ch*d)}
+ const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,cw,ch);
+ const ox=V.cx-cw/2,oy=V.cy-ch/2,PX=lo=>W(lo,z)-ox,PY=la=>Hh(la,z)-oy;
+ if(L.base!='none'){const tz=Math.min(19,Math.max(1,Math.round(z))),ts=256*2**(z-tz),n=2**tz;
+  for(let tx=Math.floor(ox/ts);tx<=Math.floor((ox+cw)/ts);tx++)for(let ty=Math.floor(oy/ts);ty<=Math.floor((oy+ch)/ts);ty++){if(ty<0||ty>=n)continue;const tm=((tx%n)+n)%n,u=L.base=='sat'?`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${tz}/${ty}/${tm}`:`https://tile.openstreetmap.org/${tz}/${tm}/${ty}.png`;
+   let im=TC[u];if(!im){im=TC[u]=new Image();im.onload=draw;im.src=u}if(im.complete&&im.naturalWidth)x.drawImage(im,tx*ts-ox,ty*ts-oy,ts+.5,ts+.5)}
+  x.fillStyle='rgba(255,255,255,.8)';x.fillRect(0,ch-17,150,17);x.fillStyle='#000';x.font='11px sans-serif';x.fillText(L.base=='sat'?'Imagery © Esri':'© OpenStreetMap',5,ch-5)}
+ if(L.gap)s.cv.pol.forEach(q=>{if(!q.img)return;const g=q.g,la1=g.la0+(g.y0+g.ny*g.cs)/g.ky,la0=g.la0+g.y0/g.ky,lo0=g.lo0+g.x0/g.kx,lo1=g.lo0+(g.x0+g.nx*g.cs)/g.kx;x.imageSmoothingEnabled=false;x.drawImage(q.img,PX(lo0),PY(la1),PX(lo1)-PX(lo0),PY(la0)-PY(la1))});
+ if(L.kml)(p.kmls||[]).forEach(k=>k.feats.forEach(f=>{x.strokeStyle=x.fillStyle='#e11d8f';x.lineWidth=2.5;
+  if(f.t=='pt'){x.beginPath();x.arc(PX(f.c[0][1]),PY(f.c[0][0]),5,0,7);x.fill();return}
+  x.beginPath();f.c.forEach((q,i)=>x[i?'lineTo':'moveTo'](PX(q[1]),PY(q[0])));
+  if(f.t=='pg'){x.closePath();x.globalAlpha=.18;x.fill();x.globalAlpha=1}x.stroke()}));
+ if(L.cv){x.fillStyle='rgba(34,197,94,.22)';x.strokeStyle='rgba(34,197,94,.7)';x.lineWidth=1;s.gp.forEach(a=>{const w=fs(a,p)/(156543.03*Math.cos(a.lat*Math.PI/180)/2**z),u=PX(a.lon),v=PY(a.lat);x.fillRect(u-w/2,v-w/2,w,w);x.strokeRect(u-w/2,v-w/2,w,w)})}
+ GV=[];
+ if(L.gc)p.gcps.forEach(g=>{x.fillStyle=SC[g.status]||'#e03131';const u=PX(g.lon),v=PY(g.lat);GV.push({g,x:u,y:v});x.beginPath();x.moveTo(u,v-11);x.lineTo(u+10,v+8);x.lineTo(u-10,v+8);x.closePath();x.fill();x.strokeStyle='#fff';x.lineWidth=1.5;x.stroke();if(z>=14){x.font='bold 11px sans-serif';x.lineWidth=3;x.strokeStyle='rgba(0,0,0,.75)';x.strokeText(g.name,u+12,v+4);x.fillStyle='#fff';x.fillText(g.name,u+12,v+4)}});
+ PV=[];
+ if(L.ph){PV=s.gp.map(a=>({a,x:PX(a.lon),y:PY(a.lat)})).filter(q=>q.x>-20&&q.x<cw+20&&q.y>-20&&q.y<ch+20);const th=PV.length<=300;
+  PV.forEach(q=>{const a=q.a,u=q.x,v=q.y,i=p.missions.findIndex(m=>m.id===a.mission),col=i<0?'#9aa5b1':PAL[i%PAL.length];
+   if(th&&a.th){let im=THI[a.id];if(!im){im=THI[a.id]=new Image();im.onload=draw;im.src=a.th}
+    if(im.complete&&im.naturalWidth){x.fillStyle=col;x.fillRect(u-17,v-17,34,34);x.drawImage(im,u-15,v-15,30,30);return}}
+   x.fillStyle=col;x.beginPath();x.arc(u,v,5,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=1.5;x.stroke()})}}
+/* KML */
+function kmls(p){p.kmls=p.kmls||[];return `<div class="card"><h2>KML upload</h2><div class="row"><input type="file" id="kf" accept=".kml" multiple onchange="kup(this)"></div><div class="mu">KML file repo ke kml/ folder me save hoti hai (GitHub sync settings chahiye). Points, lines aur polygons Dashboard map par dikhte hain.</div></div>
+<div class="card sc"><h2>KML files (${p.kmls.length})</h2><table><tr><th>File</th><th>Points</th><th>Lines</th><th>Polygons</th><th>Repo</th><th></th></tr>${p.kmls.map(k=>{const n=t=>k.feats.filter(f=>f.t==t).length;return `<tr><td>${E(k.name)}</td><td>${n('pt')}</td><td>${n('ln')}</td><td>${n('pg')}</td><td><span class="tag ${k.path?'ok':''}">${k.path?E(k.path):'local only'}</span></td><td><button onclick="kimp('${k.id}')">Points ko GCP banao</button> <button class="x" onclick="kdel('${k.id}')">x</button></td></tr>`}).join('')}</table></div>`}
+function kparse(t){const d=new DOMParser().parseFromString(t,'text/xml'),o=[];
+ const co=n=>n.textContent.trim().split(/\s+/).map(s=>s.split(',').map(Number)).filter(a=>a.length>=2&&!isNaN(a[0])&&!isNaN(a[1])).map(a=>[+a[1].toFixed(7),+a[0].toFixed(7),a[2]||0]);
+ d.querySelectorAll('Placemark').forEach(m=>{const nm=(m.querySelector('name')||{}).textContent||'';
+  m.querySelectorAll('Point coordinates').forEach(n=>{const c=co(n);if(c.length)o.push({t:'pt',name:nm,c})});
+  m.querySelectorAll('LineString coordinates').forEach(n=>{const c=co(n);if(c.length>1)o.push({t:'ln',name:nm,c})});
+  m.querySelectorAll('Polygon outerBoundaryIs coordinates').forEach(n=>{const c=co(n);if(c.length>2)o.push({t:'pg',name:nm,c})})});return o}
+async function kpush(name,t,p){const path=`kml/${p.name.replace(/[^\w-]+/g,'_')}/${name}`,u=`https://api.github.com/repos/${G.repo}/contents/${path}`,h={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'},b=G.branch||'main';
+ const r=await fetch(u+'?ref='+b,{headers:h}),sha=r.ok?(await r.json()).sha:undefined;
+ const w=await fetch(u,{method:'PUT',headers:h,body:JSON.stringify({message:'Add KML '+name,content:btoa(unescape(encodeURIComponent(t))),branch:b,sha})});
+ if(!w.ok)throw 0;return path}
+async function kup(i){const p=P();p.kmls=p.kmls||[];let n=0,ok=0;say('KML padh raha hu...');
+ for(const f of i.files){const t=await f.text(),feats=kparse(t);if(!feats.length)continue;
+  const k={id:uid(),name:f.name,feats,path:''};
+  if(G.repo&&G.token){try{k.path=await kpush(f.name,t,p)}catch(e){}}
+  p.kmls.push(k);n++;if(k.path)ok++}
+ save();msg=n+' KML add hui, '+ok+' GitHub me save hui'+(n>ok?' (baaki local only: GitHub sync settings check karo)':'');R()}
+function kimp(id){const p=P(),k=p.kmls.find(x=>x.id==id);let n=0;k.feats.filter(f=>f.t=='pt').forEach(f=>{const a=f.c[0];if(!p.gcps.some(g=>g.name==f.name&&Math.abs(g.lat-a[0])<1e-7&&Math.abs(g.lon-a[1])<1e-7)){p.gcps.push({id:uid(),name:f.name||'KML',lat:a[0],lon:a[1],elev:a[2]||null,status:'planned'});n++}});save();msg=n+' GCP import hue';R()}
+function kdel(id){const p=P();p.kmls=p.kmls.filter(k=>k.id!==id);save();msg='App se hata di (repo me file wahin rahegi)';R()}
+/* GitHub sync */
+let G={};try{G=JSON.parse(localStorage.getItem(KG)||'{}')}catch(e){}
+g1.value=G.repo||'';g2.value=G.branch||'';g3.value=G.path||'';g4.value=G.token||'';
+function gsave(){G={repo:g1.value.trim(),branch:g2.value.trim()||'main',path:g3.value.trim()||'data/drone-data.json',token:g4.value.trim()};try{localStorage.setItem(KG,JSON.stringify(G))}catch(e){}say('GitHub settings save hui')}
+const gu=()=>`https://api.github.com/repos/${G.repo}/contents/${G.path}`,gh_={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'};
+async function gpush(){gsave();try{say('Push ho raha hai...');const h={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'};
+ const r=await fetch(gu()+'?ref='+G.branch,{headers:h});const sha=r.ok?(await r.json()).sha:undefined;
+ const w=await fetch(gu(),{method:'PUT',headers:h,body:JSON.stringify({message:'Update drone data '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(S,null,2)))),branch:G.branch,sha})});
+ say(w.ok?'GitHub par save ho gaya':'Push fail: '+w.status)}catch(e){say('Network error: ye page GitHub Pages ya local server se kholo')}}
+async function gpull(){gsave();try{const r=await fetch(gu()+'?ref='+G.branch,{headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
+ if(!r.ok)return say('Pull fail: '+r.status);const j=await r.json();S=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));cur=S.projects[0]&&S.projects[0].id;save();msg='GitHub se data aa gaya';R()}catch(e){say('Network error ya data sahi nahi')}}
+R();
+</script></body></html>
