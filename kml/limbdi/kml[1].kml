@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>kml[1].kml</name>
+	<atom:link rel="app" href="https://www.google.com/earth/about/versions/#earth-pro" title="Google Earth Pro 7.3.7.1155"></atom:link>
+	<Style id="point1">
+		<IconStyle>
+			<Icon>
+				<href>C:/Users/dm/AppData/Local/Microsoft/Windows/INetCache/IE/URMNVN8K/kml_symbol_dot_custom_3_255_188_104_0.png</href>
+			</Icon>
+		</IconStyle>
+	</Style>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.374032437,28.68064258,216.132</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.37408310799999,28.680675145,216.176</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.374135125,28.680720147,216.07</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.37419968,28.68078853,216.094</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.37424428,28.680856262,216.02</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.37427618,28.680923386,216.058</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.374306703,28.680987937,216.149</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.374340688,28.681055404,216.185</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.374365735,28.681113942,216.16</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<description>Unknown Point Feature</description>
+		<styleUrl>#point1</styleUrl>
+		<Point>
+			<coordinates>77.37439089599999,28.681172578,216.156</coordinates>
+		</Point>
+	</Placemark>
+</Document>
+</kml>
