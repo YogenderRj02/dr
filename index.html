@@ -80,7 +80,7 @@ function R(){
  const p=P();
  if(!p){$('#m').innerHTML='<div class="card">Upar "+ Naya project" se pehla project banao, phir drone photos upload karke progress dekho.</div>';return}
  const SS=stats(p);$('#m').innerHTML={dash,ph:phs,mi:mis,wk:wks,gc:gcs,kl:kmls}[tab](p,SS);
- if(tab=='dash'||tab=='gc')map(p,SS);
+ if(tab=='dash'||tab=='gc'||tab=='ph')map(p,SS);
  say(msg);msg='';
 }
 function dash(p,s){
@@ -98,15 +98,22 @@ function dash(p,s){
  ${mapCard()}
  <div class="card"><h2>Din ke hisaab se photos</h2>${dk.map(d=>`<div class="tl"><span style="width:84px">${d}</span><div style="width:${days[d]/mx*70}%"></div>${days[d]}</div>`).join('')||'<div class="mu">Photos upload karo.</div>'}</div>`}
 function phs(p,s){
- return `<div class="card"><h2>Drone photos upload</h2><div class="row"><select id="ms"><option value="">Mission: koi nahi</option>${p.missions.map(m=>`<option value="${m.id}">${E(m.name)}</option>`).join('')}</select><input type="file" id="fi" accept="image/*" multiple onchange="up(this)"></div>
- <div class="mu">Photo ka EXIF (time, GPS, altitude, camera, size) padha jata hai. Photo khud save nahi hoti, sirf metadata.</div></div>
+ return `<div class="card"><h2>Drone photos upload</h2><div class="row"><select id="ms"><option value="">Mission: koi nahi</option>${p.missions.map(m=>`<option value="${m.id}">${E(m.name)}</option>`).join('')}</select><input type="file" id="fi" accept="image/*" multiple onchange="up(this)" hidden><input type="file" id="fo" webkitdirectory multiple onchange="up(this)" hidden><button class="p" onclick="fo.click()">Drone folder choose karo</button><button onclick="fi.click()">Photos choose karo</button></div>
+ <div class="mu">Computer par pura folder choose karo; mobile par "Photos choose karo" se saari photos select karo. Har photo ka EXIF (time, GPS, height, camera) padh kar missions, progress aur map update ho jate hain. Photo khud save nahi hoti.</div></div>
+ ${mapCard()}
  <div class="card sc"><h2>Metadata (${s.ph.length})</h2><div class="row"><input placeholder="File naam search" value="${E(FQ)}" onchange="FQ=this.value.toLowerCase();R()"><select onchange="FM=this.value;R()"><option value="">Saare missions</option><option value="-" ${FM=='-'?'selected':''}>Mission nahi</option>${p.missions.map(m=>`<option value="${m.id}" ${FM==m.id?'selected':''}>${E(m.name)}</option>`).join('')}</select><button onclick="csvx()">CSV export</button></div><table><tr><th>File</th><th>Time</th><th>Lat</th><th>Lon</th><th>Alt</th><th>Camera</th><th>Mission</th><th></th></tr>
  ${s.ph.filter(x=>(!FQ||x.file.toLowerCase().includes(FQ))&&(!FM||(FM=='-'?!x.mission:x.mission===FM))).slice(-150).reverse().map(x=>`<tr><td>${E(x.file)}</td><td>${x.time?x.time.slice(0,16).replace('T',' '):'-'}</td><td>${x.lat==null?'-':x.lat.toFixed(6)}</td><td>${x.lon==null?'-':x.lon.toFixed(6)}</td><td>${x.rel!=null?x.rel.toFixed(0)+' (rel)':x.alt!=null?x.alt.toFixed(0):'-'}</td><td>${E(x.cam)}</td><td><select onchange="sm('${x.id}',this.value)"><option value="">-</option>${p.missions.map(m=>`<option value="${m.id}" ${m.id===x.mission?'selected':''}>${E(m.name)}</option>`).join('')}</select></td><td><button class="x" onclick="dph('${x.id}')">x</button></td></tr>`).join('')}</table></div>`}
-async function up(i){const p=P(),mid=$('#ms').value||null;let n=0;say('Metadata padh raha hu...');
- for(const f of i.files){try{const t=await exifr.parse(f,{tiff:true,exif:true,gps:true,xmp:true})||{},d=t.DateTimeOriginal||t.CreateDate;
-  const o={id:uid(),mission:mid,th:t.latitude==null?null:await thumb(f),file:f.name,size:f.size,time:d?new Date(d).toISOString():null,lat:t.latitude==null?null:t.latitude,lon:t.longitude==null?null:t.longitude,alt:t.GPSAltitude==null?null:+t.GPSAltitude,rel:t.RelativeAltitude==null?null:+t.RelativeAltitude,cam:[t.Make,t.Model].filter(Boolean).join(' '),w:t.ExifImageWidth||t.ImageWidth||null,h:t.ExifImageHeight||t.ImageHeight||null};
-  if(!p.photos.some(x=>x.file===o.file&&x.time===o.time)){p.photos.push(o);n++}}catch(e){}}
- const a=aa(p);save();msg=n+' photos add hue'+(a?', '+a+' mission se jude':'');R()}
+async function up(i){const p=P(),mid=$('#ms').value||null,fl=[...i.files].filter(f=>f.type.startsWith('image/')||/\.(jpe?g|tiff?|png|dng|heic)$/i.test(f.name));
+ if(!fl.length){say('Koi image nahi mili');return}
+ let k=0,gp=0,q=0;const seen=new Set(p.photos.map(x=>x.file+'|'+x.time)),add=[];
+ const one=async f=>{try{const t=await exifr.parse(f,{tiff:true,exif:true,gps:true,xmp:true})||{},d=t.DateTimeOriginal||t.CreateDate,
+   o={id:uid(),mission:mid,th:t.latitude==null?null:await thumb(f),fo:f.webkitRelativePath?f.webkitRelativePath.split('/').slice(0,-1).join('/'):'',file:f.name,size:f.size,time:d?new Date(d).toISOString():null,lat:t.latitude==null?null:t.latitude,lon:t.longitude==null?null:t.longitude,alt:t.GPSAltitude==null?null:+t.GPSAltitude,rel:t.RelativeAltitude==null?null:+t.RelativeAltitude,cam:[t.Make,t.Model].filter(Boolean).join(' '),w:t.ExifImageWidth||t.ImageWidth||null,h:t.ExifImageHeight||t.ImageHeight||null},key=o.file+'|'+o.time;
+   if(!seen.has(key)){seen.add(key);add.push(o);if(o.lat!=null)gp++}}catch(e){}
+  k++;if(k%10==0||k==fl.length)say('Photos padh raha hu: '+k+' / '+fl.length)};
+ await Promise.all([0,1,2,3].map(async()=>{while(q<fl.length)await one(fl[q++])}));
+ add.forEach(o=>p.photos.push(o));
+ let nm=0;if(!mid){[...new Set(add.filter(x=>x.time).map(x=>ld(x.time)))].sort().forEach(d=>{if(!p.missions.some(m=>m.date==d)){p.missions.push({id:uid(),name:'Flight '+d,date:d,planned:add.filter(x=>x.time&&ld(x.time)==d).length,notes:'folder se auto'});nm++}})}
+ const a=aa(p);V.pid=null;save();msg=add.length+' photos add hue ('+gp+' me GPS)'+(nm?', '+nm+' mission auto bane':'')+(a?', '+a+' photos mission se jude':'');R()}
 const sm=(id,v)=>{P().photos.find(x=>x.id===id).mission=v||null;save();msg='Mission update hua';R()};
 const dph=id=>{const p=P();p.photos=p.photos.filter(x=>x.id!==id);save();R()};
 function mis(p,s){return `<div class="card"><h2>Mission add karo</h2><div class="row"><input id="a1" placeholder="Mission ka naam"><input id="a2" type="date"><input id="a3" type="number" placeholder="Planned photos" style="width:130px"></div><div class="row"><input id="a4" placeholder="Notes" style="flex:1"><button class="p" onclick="am()">Add mission</button></div></div>
