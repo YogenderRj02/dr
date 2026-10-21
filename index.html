@@ -246,8 +246,8 @@ const gu=()=>`https://api.github.com/repos/${G.repo}/contents/${G.path}`,gh_={Au
 async function gpush(){gsave();try{say('Push ho raha hai...');const h={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'};
  const r=await fetch(gu()+'?ref='+G.branch,{headers:h});const sha=r.ok?(await r.json()).sha:undefined;
  const w=await fetch(gu(),{method:'PUT',headers:h,body:JSON.stringify({message:'Update drone data '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(S,null,2)))),branch:G.branch,sha})});
- say(w.ok?'GitHub par save ho gaya':'Push fail: '+w.status)}catch(e){say('Network error: ye page GitHub Pages ya local server se kholo')}}
+ {let m='';try{m=(await w.json()).message}catch(e){}say(w.ok?'GitHub par save ho gaya':'Push fail: '+w.status+' - '+m)}}catch(e){say('Network error: ye page GitHub Pages ya local server se kholo')}}
 async function gpull(){gsave();try{const r=await fetch(gu()+'?ref='+G.branch,{headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
- if(!r.ok)return say('Pull fail: '+r.status);const j=await r.json();S=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));cur=S.projects[0]&&S.projects[0].id;save();msg='GitHub se data aa gaya';R()}catch(e){say('Network error ya data sahi nahi')}}
+ if(!r.ok){let m='';try{m=(await r.json()).message}catch(e){}return say('Pull fail: '+r.status+' - '+m)}const j=await r.json();S=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));cur=S.projects[0]&&S.projects[0].id;save();msg='GitHub se data aa gaya';R()}catch(e){say('Network error ya data sahi nahi')}}
 R();
 </script></body></html>
