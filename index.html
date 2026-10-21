@@ -41,15 +41,16 @@ body{background:linear-gradient(var(--bg),var(--bg))}
 .tabs button.on{background:var(--cd);border-radius:7px 7px 0 0}
 @media print{.top,.tabs,#gh,#msg,.card .row,#np{display:none!important}.pt{display:block}body{background:#fff;color:#000}.card{break-inside:avoid;box-shadow:none}canvas{height:380px;max-height:none}}
 </style></head><body><div class="w">
-<div class="top"><h1>Drone Progress Tracker</h1>
+<div class="top"><h1>Drone Progress Tracker<br><span id="ss" class="mu" style="font-weight:400"></span></h1>
 <button onclick="gh.style.display=gh.style.display=='block'?'none':'block'">GitHub sync</button>
 <button onclick="tg()">Theme</button><button onclick="window.print()">Print / PDF</button><button onclick="exp()">Export JSON</button>
 <button onclick="imp.click()">Import JSON</button><input id="imp" type="file" accept=".json" hidden onchange="impf(this)"></div>
 <div id="gh" class="card"><h2>GitHub me data save karo</h2>
-<div class="row"><input id="g1" placeholder="owner/repo"><input id="g2" placeholder="branch (main)" size="10"><input id="g3" placeholder="data/drone-data.json"></div>
-<div class="row"><input id="g4" type="password" placeholder="Personal access token (Contents: read/write)"><button onclick="gsave()">Settings save</button><button class="p" onclick="gpush()">Push to GitHub</button><button onclick="gpull()">Pull from GitHub</button></div>
-<div class="mu">Token sirf is browser me rehta hai. GitHub sync tabhi chalega jab ye page aapke GitHub Pages ya local server se khule; is preview me network band hai, wahan Export/Import use karein.</div></div>
+<div class="row"><input id="g1" placeholder="owner/repo"><input id="g2" placeholder="branch (khali = default)" size="14"><input id="g3" placeholder="data/drone-data.json"></div>
+<div class="row"><input id="g4" type="password" placeholder="Personal access token (Contents: read/write)"><button onclick="gsave()">Settings save</button><button class="p" onclick="sync(true)">Abhi sync karo</button><button onclick="glink()">Dusre device ka setup link</button><button onclick="vlock()">Sab devices ke liye passphrase setup</button></div>
+<div class="mu">Repo aur path GitHub Pages ke URL se apne aap bhar jate hain; branch khali chhodo to default branch use hogi. Har device par sirf ek baar token daalo, ya "setup link" dusre device par kholo. Uske baad projects sab devices me apne aap sync hote hain. Token na ho to data sirf padh sakte ho. Token sirf us device ke browser me rehta hai.</div></div>
 <div id="msg"></div>
+<div id="vb" class="card row" style="display:none"><b>Is device ko setup karo:</b><input id="vp" type="password" placeholder="Passphrase" autocomplete="current-password"><button class="p" onclick="vopen()">Unlock</button><span class="mu">Ek baar passphrase daalo, GitHub token apne aap set ho jayega.</span></div>
 <div class="card"><div class="row"><select id="ps" onchange="cur=this.value;tab='dash';R()"></select>
 <button onclick="np.style.display='flex'">+ Naya project</button><button class="x" onclick="dp()">Delete</button></div>
 <div class="row" id="np" style="display:none"><input id="pn" placeholder="Project ka naam"><input id="pl" placeholder="Site / location"><button class="p" onclick="ap()">Add project</button></div></div>
@@ -62,7 +63,7 @@ const uid=()=>Math.random().toString(36).slice(2,9),pc=n=>Math.round(n)+'%';
 let S={projects:[]},cur=null,tab='dash',msg='';
 try{S=JSON.parse(localStorage.getItem(K))||S}catch(e){}
 cur=S.projects[0]&&S.projects[0].id;
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){msg='Browser storage full hai: Export JSON ya GitHub push karo'}};
+const save=()=>{const p=P();if(p)p.ts=Date.now();dirty=true;try{localStorage.setItem(K,JSON.stringify(S));localStorage.setItem('dronetrk_dirty','1')}catch(e){msg='Browser storage full hai: GitHub sync chalu rakho ya Export JSON karo'}clearTimeout(tm);tm=setTimeout(()=>sync(),3000)};
 const P=()=>S.projects.find(p=>p.id===cur);
 const say=t=>{$('#msg').textContent=t};
 function hav(a,b,c,d){const r=Math.PI/180,x=Math.sin((c-a)*r/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin((d-b)*r/2)**2;return 12742000*Math.asin(Math.sqrt(x))}
@@ -115,7 +116,7 @@ async function up(i){const p=P(),mid=$('#ms').value||null,fl=[...i.files].filter
  let nm=0;if(!mid){[...new Set(add.filter(x=>x.time).map(x=>ld(x.time)))].sort().forEach(d=>{if(!p.missions.some(m=>m.date==d)){p.missions.push({id:uid(),name:'Flight '+d,date:d,planned:add.filter(x=>x.time&&ld(x.time)==d).length,notes:'folder se auto'});nm++}})}
  const a=aa(p);V.pid=null;save();msg=add.length+' photos add hue ('+gp+' me GPS)'+(nm?', '+nm+' mission auto bane':'')+(a?', '+a+' photos mission se jude':'');R()}
 const sm=(id,v)=>{P().photos.find(x=>x.id===id).mission=v||null;save();msg='Mission update hua';R()};
-const dph=id=>{const p=P();p.photos=p.photos.filter(x=>x.id!==id);save();R()};
+const dph=id=>{const p=P();p.dl=(p.dl||[]).concat(id);p.photos=p.photos.filter(x=>x.id!==id);save();R()};
 function mis(p,s){return `<div class="card"><h2>Mission add karo</h2><div class="row"><input id="a1" placeholder="Mission ka naam"><input id="a2" type="date"><input id="a3" type="number" placeholder="Planned photos" style="width:130px"></div><div class="row"><input id="a4" placeholder="Notes" style="flex:1"><button class="p" onclick="am()">Add mission</button></div></div>
  <div class="card"><h2>Missions</h2><div class="row"><button onclick="aab()">Photos ko date se mission me auto-assign karo</button></div>${s.ms.map((x,i)=>`<div class="li"><div><span style="color:${PAL[i%PAL.length]}">●</span> <b>${E(x.m.name)}</b> <span class="mu">${E(x.m.date||'')} ${E(x.m.notes||'')}</span><br><span class="mu">${x.n}/${x.m.planned||'?'} photos (${pc(x.p)})</span></div><button class="x" onclick="del('missions','${x.m.id}')">Delete</button></div>`).join('')||'<div class="mu">Abhi koi mission nahi.</div>'}</div>`}
 function wks(p){return `<div class="card"><h2>Kaam add karo</h2><div class="row"><input id="a1" placeholder="Kaam (jaise Survey, Road mapping)"><input id="a2" placeholder="Unit (km, ha, plot)" style="width:120px"><input id="a3" type="number" placeholder="Target" style="width:100px"><button class="p" onclick="aw()">Add kaam</button></div></div>
@@ -128,14 +129,14 @@ function gcs(p,s){return `<div class="card"><h2>GCP KML upload</h2><div class="r
  <div class="card sc"><h2>GCP (${p.gcps.length})</h2><table><tr><th>Naam</th><th>Lat</th><th>Lon</th><th>Elev</th><th>Status</th><th>Photos me</th><th></th></tr>${s.gc.map(({g,cov})=>`<tr><td>${E(g.name)}</td><td>${g.lat}</td><td>${g.lon}</td><td>${g.elev==null?'-':g.elev}</td><td><select onchange="gst('${g.id}',this.value)">${['planned','marked','collected','verified'].map(o=>`<option ${o==g.status?'selected':''}>${o}</option>`).join('')}</select></td><td><span class="tag ${cov?'ok':''}">${cov?'covered':'nahi'}</span></td><td><button class="x" onclick="del('gcps','${g.id}')">x</button></td></tr>`).join('')}</table></div>`}
 const v=id=>$('#'+id).value.trim();
 function ap(){if(!v('pn'))return;const p={id:uid(),name:v('pn'),site:v('pl'),radius:50,works:[],missions:[],gcps:[],photos:[]};S.projects.push(p);cur=p.id;save();np.style.display='none';R()}
-function dp(){if(!P()||!confirm('Ye project aur uska data delete karein?'))return;S.projects=S.projects.filter(p=>p.id!==cur);cur=S.projects[0]&&S.projects[0].id;save();R()}
+function dp(){if(!P()||!confirm('Ye project aur uska data delete karein?'))return;S.dl=(S.dl||[]).concat(cur);S.projects=S.projects.filter(p=>p.id!==cur);cur=S.projects[0]&&S.projects[0].id;save();R()}
 function am(){if(!v('a1'))return;P().missions.push({id:uid(),name:v('a1'),date:v('a2'),planned:+v('a3')||0,notes:v('a4')});save();R()}
 function aw(){if(!v('a1'))return;P().works.push({id:uid(),name:v('a1'),unit:v('a2'),target:+v('a3')||0,done:0});save();R()}
 const wd=(id,x)=>{P().works.find(w=>w.id===id).done=+x||0;save();R()};
 function ag(){if(!v('a1')||v('a2')===''||v('a3')==='')return;P().gcps.push({id:uid(),name:v('a1'),lat:+v('a2'),lon:+v('a3'),elev:v('a4')===''?null:+v('a4'),status:v('a5')});save();R()}
 function csv(){let n=0;v('cs').split('\n').forEach(l=>{const a=l.split(/[,\t]/).map(x=>x.trim());if(a.length>=3&&!isNaN(+a[1])&&!isNaN(+a[2])){P().gcps.push({id:uid(),name:a[0],lat:+a[1],lon:+a[2],elev:a[3]?+a[3]:null,status:'planned'});n++}});save();msg=n+' GCP import hue';R()}
 const gst=(id,s)=>{P().gcps.find(g=>g.id===id).status=s;save();R()};
-function del(k,id){const p=P();p[k]=p[k].filter(x=>x.id!==id);if(k=='missions')p.photos.forEach(x=>{if(x.mission===id)x.mission=null});save();R()}
+function del(k,id){const p=P();p.dl=(p.dl||[]).concat(id);p[k]=p[k].filter(x=>x.id!==id);if(k=='missions')p.photos.forEach(x=>{if(x.mission===id)x.mission=null});save();R()}
 function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}));a.download='drone-data.json';a.click()}
 function impf(i){const f=i.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!Array.isArray(d.projects))throw 0;S=d;cur=S.projects[0]&&S.projects[0].id;save();msg='Data import ho gaya';R()}catch(e){say('JSON file sahi nahi hai')}})}
 /* EXTRAS */
@@ -233,9 +234,9 @@ function kparse(t){const d=new DOMParser().parseFromString(t,'text/xml'),o=[];
   m.querySelectorAll('Point coordinates').forEach(n=>{const c=co(n);if(c.length)o.push({t:'pt',name:nm,c})});
   m.querySelectorAll('LineString coordinates').forEach(n=>{const c=co(n);if(c.length>1)o.push({t:'ln',name:nm,c})});
   m.querySelectorAll('Polygon outerBoundaryIs coordinates').forEach(n=>{const c=co(n);if(c.length>2)o.push({t:'pg',name:nm,c})})});return o}
-async function kpush(name,t,p){const path=`kml/${p.name.replace(/[^\w-]+/g,'_')}/${name}`,u=`https://api.github.com/repos/${G.repo}/contents/${path}`,h={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'},b=G.branch||'main';
- const r=await fetch(u+'?ref='+b,{headers:h}),sha=r.ok?(await r.json()).sha:undefined;
- const w=await fetch(u,{method:'PUT',headers:h,body:JSON.stringify({message:'Add KML '+name,content:btoa(unescape(encodeURIComponent(t))),branch:b,sha})});
+async function kpush(name,t,p){const path=`kml/${p.name.replace(/[^\w-]+/g,'_')}/${name}`,u=`https://api.github.com/repos/${G.repo}/contents/${path}`,h={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'},b=G.branch||'';
+ const r=await fetch(u+(b?'?ref='+b:''),{headers:h}),sha=r.ok?(await r.json()).sha:undefined;
+ const w=await fetch(u,{method:'PUT',headers:h,body:JSON.stringify({message:'Add KML '+name,content:btoa(unescape(encodeURIComponent(t))),branch:b||undefined,sha})});
  if(!w.ok)throw 0;return path}
 async function kup(i){const p=P();p.kmls=p.kmls||[];let n=0,ok=0;say('KML padh raha hu...');
  for(const f of i.files){const t=await f.text(),feats=kparse(t);if(!feats.length)continue;
@@ -244,17 +245,64 @@ async function kup(i){const p=P();p.kmls=p.kmls||[];let n=0,ok=0;say('KML padh r
   p.kmls.push(k);n++;if(k.path)ok++}
  save();msg=n+' KML add hui, '+ok+' GitHub me save hui'+(n>ok?' (baaki local only: GitHub sync settings check karo)':'');R()}
 function kimp(id){const p=P(),k=p.kmls.find(x=>x.id==id);let n=0;k.feats.filter(f=>f.t=='pt').forEach(f=>{const a=f.c[0];if(!p.gcps.some(g=>g.name==f.name&&Math.abs(g.lat-a[0])<1e-7&&Math.abs(g.lon-a[1])<1e-7)){p.gcps.push({id:uid(),name:f.name||'KML',lat:a[0],lon:a[1],elev:a[2]||null,status:'planned'});n++}});save();msg=n+' GCP import hue';R()}
-function kdel(id){const p=P();p.kmls=p.kmls.filter(k=>k.id!==id);save();msg='App se hata di (repo me file wahin rahegi)';R()}
+function kdel(id){const p=P();p.dl=(p.dl||[]).concat(id);p.kmls=p.kmls.filter(k=>k.id!==id);save();msg='App se hata di (repo me file wahin rahegi)';R()}
 /* GitHub sync */
-let G={};try{G=JSON.parse(localStorage.getItem(KG)||'{}')}catch(e){}
-g1.value=G.repo||'';g2.value=G.branch||'';g3.value=G.path||'';g4.value=G.token||'';
-function gsave(){G={repo:g1.value.trim(),branch:g2.value.trim()||'main',path:g3.value.trim()||'data/drone-data.json',token:g4.value.trim()};try{localStorage.setItem(KG,JSON.stringify(G))}catch(e){}say('GitHub settings save hui')}
-const gu=()=>`https://api.github.com/repos/${G.repo}/contents/${G.path}`,gh_={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'};
-async function gpush(){gsave();try{say('Push ho raha hai...');const h={Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'};
- const r=await fetch(gu()+'?ref='+G.branch,{headers:h});const sha=r.ok?(await r.json()).sha:undefined;
- const w=await fetch(gu(),{method:'PUT',headers:h,body:JSON.stringify({message:'Update drone data '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(S,null,2)))),branch:G.branch,sha})});
- {let m='';try{m=(await w.json()).message}catch(e){}say(w.ok?'GitHub par save ho gaya':'Push fail: '+w.status+' - '+m)}}catch(e){say('Network error: ye page GitHub Pages ya local server se kholo')}}
-async function gpull(){gsave();try{const r=await fetch(gu()+'?ref='+G.branch,{headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json'}});
- if(!r.ok){let m='';try{m=(await r.json()).message}catch(e){}return say('Pull fail: '+r.status+' - '+m)}const j=await r.json();S=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,'')))));cur=S.projects[0]&&S.projects[0].id;save();msg='GitHub se data aa gaya';R()}catch(e){say('Network error ya data sahi nahi')}}
+let G={},dirty=false,tm=0,busy=false;
+try{G=JSON.parse(localStorage.getItem(KG)||'{}');dirty=localStorage.getItem('dronetrk_dirty')=='1'}catch(e){}
+try{if(location.hash.startsWith('#cfg=')){G=JSON.parse(decodeURIComponent(escape(atob(location.hash.slice(5)))));localStorage.setItem(KG,JSON.stringify(G));history.replaceState(null,'',location.pathname+location.search);msg='GitHub settings is device par set ho gayi'}}catch(e){}
+if(!G.repo&&/github\.io$/.test(location.hostname)){const o=location.hostname.split('.')[0],r=location.pathname.split('/')[1];G.repo=o+'/'+(r&&!/\./.test(r)?r:location.hostname)}
+G.path=G.path||'data/drone-data.json';
+g1.value=G.repo||'';g2.value=G.branch||'';g3.value=G.path;g4.value=G.token||'';
+const badge=t=>{const e=document.getElementById('ss');if(e)e.textContent=t},lsave=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+function gsave(){G={repo:g1.value.trim(),branch:g2.value.trim(),path:g3.value.trim()||'data/drone-data.json',token:g4.value.trim()};try{localStorage.setItem(KG,JSON.stringify(G))}catch(e){}say('GitHub settings save hui');sync()}
+function glink(){gsave();const u=location.origin+location.pathname+'#cfg='+btoa(unescape(encodeURIComponent(JSON.stringify(G))));
+ (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>say('Setup link copy ho gaya. Ise sirf apne dusre device par kholo, kisi ko mat bhejo (isme token hai).'),()=>prompt('Is link ko copy karo (token isme hai, private rakho):',u))}
+function mg(a,b){const dl=new Set([...(a.dl||[]),...(b.dl||[])]),out={projects:[],dl:[...dl]};
+ new Set([...a.projects,...b.projects].map(p=>p.id)).forEach(id=>{if(dl.has(id))return;const x=a.projects.find(p=>p.id==id),y=b.projects.find(p=>p.id==id);
+  if(!x||!y){out.projects.push(x||y);return}
+  const n=(x.ts||0)>=(y.ts||0)?x:y,o=n===x?y:x,r={...o,...n},pd=new Set([...(x.dl||[]),...(y.dl||[])]);r.dl=[...pd];
+  ['works','missions','gcps','photos','kmls'].forEach(k=>{const m=new Map();(o[k]||[]).concat(n[k]||[]).forEach(e=>{if(!pd.has(e.id))m.set(e.id,e)});r[k]=[...m.values()]});
+  out.projects.push(r)});return out}
+const hh=()=>Object.assign({Accept:'application/vnd.github+json'},G.token?{Authorization:'Bearer '+G.token}:{}),gu=()=>`https://api.github.com/repos/${G.repo}/contents/${G.path}`,br=()=>G.branch?'?ref='+encodeURIComponent(G.branch):'';
+async function rget(){
+ if(G.token){const r=await fetch(gu()+br(),{headers:hh()});if(r.status==404)return{data:null,sha:null};if(!r.ok)throw new Error('GET '+r.status);const j=await r.json();let t;
+  if(j.content)t=decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))));else t=await(await fetch(gu()+br(),{headers:Object.assign(hh(),{Accept:'application/vnd.github.raw+json'})})).text();
+  return{data:t.trim()?JSON.parse(t):null,sha:j.sha}}
+ try{const q=await fetch(gu()+br(),{headers:{Accept:'application/vnd.github.raw+json'}});if(q.ok){const t=await q.text();return{data:t.trim()?JSON.parse(t):null,sha:null}}}catch(e){}
+ const r=await fetch(G.path+'?t='+Date.now());return{data:r.ok?await r.json():null,sha:null}}
+async function sync(manual){if(!G.repo||busy)return;busy=true;badge('Sync ho raha hai...');let done=false;
+ try{const a0=JSON.stringify(S);
+  for(let t=0;t<3&&!done;t++){const r=await rget();
+   if(r.data&&Array.isArray(r.data.projects)){const c=cur;S=mg(S,r.data);cur=S.projects.some(p=>p.id==c)?c:(S.projects[0]&&S.projects[0].id);lsave()}
+   if(G.token&&(dirty||manual||r.data===null)){
+    const w=await fetch(gu(),{method:'PUT',headers:hh(),body:JSON.stringify({message:'Sync drone data '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(S)))),branch:G.branch||undefined,sha:r.sha||undefined})});
+    if(w.ok){dirty=false;try{localStorage.setItem('dronetrk_dirty','0')}catch(e){}done=true}
+    else if(w.status==409||w.status==422)continue;
+    else{let m='';try{m=(await w.json()).message}catch(e){}throw new Error('Push '+w.status+' - '+m)}}
+   else done=true}
+  badge(done?'Synced '+new Date().toLocaleTimeString():'Sync conflict: thodi der baad dobara try karo');
+  if(JSON.stringify(S)!==a0)R()}
+ catch(e){badge('Sync error: '+e.message)}busy=false}
+/* Device vault: token passphrase se encrypt hokar repo me; naye device par sirf passphrase */
+const VP='data/gh-config.json',b64=u=>btoa(String.fromCharCode(...u)),ub=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function vkey(pw,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+async function vlock(){try{if(!G.repo||!G.token){say('Pehle repo aur token daalo, phir ye button dabao');return}
+ const pw=prompt('Passphrase chuno (kam se kam 12 akshar, yaad rakhna). Naye device par yahi poochha jayega:');if(!pw)return;if(pw.length<12){say('Passphrase kam se kam 12 akshar ka rakho');return}
+ const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),
+  ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await vkey(pw,salt),new TextEncoder().encode(JSON.stringify({token:G.token,branch:G.branch||'',path:G.path}))));
+ const u=`https://api.github.com/repos/${G.repo}/contents/${VP}`;let sha;const e=await fetch(u+br(),{headers:hh()});if(e.ok)sha=(await e.json()).sha;
+ const w=await fetch(u,{method:'PUT',headers:hh(),body:JSON.stringify({message:'Device setup vault',content:btoa(JSON.stringify({v:1,salt:b64(salt),iv:b64(iv),ct:b64(ct)})),branch:G.branch||undefined,sha})});
+ say(w.ok?'Ho gaya. Ab har naye device par sirf passphrase daalna hoga (Pages update me 1-2 min lag sakte hain).':'Vault save nahi hua: '+w.status)}catch(e){say('Vault error: '+e.message)}}
+async function vopen(){const pw=$('#vp').value;if(!pw)return;
+ try{const r=await fetch(VP+'?t='+Date.now());if(!r.ok)throw 0;const b=await r.json(),
+  d=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:ub(b.iv)},await vkey(pw,ub(b.salt)),ub(b.ct))));
+  G={...G,...d};try{localStorage.setItem(KG,JSON.stringify(G))}catch(e){}g2.value=G.branch||'';g3.value=G.path;g4.value=G.token;$('#vb').style.display='none';say('Is device par setup ho gaya');sync(true)}
+ catch(e){say('Passphrase galat hai ya vault abhi tak nahi mila')}}
+if(!G.token&&G.repo)fetch(VP+'?t='+Date.now()).then(r=>{if(r.ok)$('#vb').style.display='flex'}).catch(()=>{});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 R();
+sync();
+addEventListener('online',()=>sync());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState=='visible')sync()});
+setInterval(()=>{if(document.visibilityState=='visible')sync()},60000);
 </script></body></html>
