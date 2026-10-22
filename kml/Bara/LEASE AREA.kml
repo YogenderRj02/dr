@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:globalmapper="https://www.bluemarblegeo.com/globalmapper">
+<Document>
+  <!-- Begin Style Definitions -->
+  <Style id="area1">
+    <LineStyle>
+      <color>FF0000FF</color>
+      <width>3</width>
+    </LineStyle>
+    <PolyStyle>
+      <color>BF000000</color>
+      <fill>0</fill>
+      <outline>1</outline>
+    </PolyStyle>
+    <IconStyle><Icon></Icon></IconStyle>
+  </Style>
+    <Placemark>
+      <description>Unknown Area Type</description>
+      <name>LEASE AREA</name>
+      <styleUrl>#area1</styleUrl>
+      <MultiGeometry>
+      <Point>
+      <coordinates>73.687111800,24.227770184,0</coordinates>
+      </Point>
+      <Polygon>
+        <altitudeMode>relativeToGround</altitudeMode>
+        <extrude>1</extrude>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              73.679553736,24.212871173,-505
+              73.689959079,24.213965141,-505
+              73.691729810,24.215903072,-505
+              73.694200289,24.214259102,-505
+              73.695961055,24.214444099,-505
+              73.692618151,24.241201028,-505
+              73.690846939,24.242636008,-505
+              73.680267662,24.240655412,-505
+              73.679553736,24.212871173,-505
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+      </MultiGeometry>
+    </Placemark>
+</Document>
+</kml>
